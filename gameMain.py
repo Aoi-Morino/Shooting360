@@ -4,7 +4,7 @@ def main():
 
   # 初期化処理
   chip_s = 48  # マップチップの基本サイズ
-  map_s = pg.Vector2(16, 9)  # マップの横・縦の配置数
+  map_s = pg.Vector2(32, 17)  # マップの横・縦の配置数
 
   pg.init()
   pg.display.set_caption('ぼくのかんがえたさいきょうのげーむ II')
@@ -17,16 +17,20 @@ def main():
   exit_flag = False
   exit_code = '000'
 
+  background_img = pg.image.load(f'data/img/map-background.png')
+  background_s = pg.Vector2(48, 48)
+
   # グリッド設定
-  grid_c = '#bbbbbb'
+  grid_cx = '#ff0000'
+  grid_cy = '#0000ff'
 
   # 自キャラ移動関連
   cmd_move = -1  # 移動コマンドの管理変数
   m_vec = [
-      pg.Vector2(0, -1),
-      pg.Vector2(1, 0),
-      pg.Vector2(0, 1),
-      pg.Vector2(-1, 0)
+      pg.Vector2(0, -0.2),
+      pg.Vector2(0.2, 0),
+      pg.Vector2(0, 0.2),
+      pg.Vector2(-0.2, 0)
   ]  # 移動コマンドに対応したXYの移動量
 
   # 自キャラの画像読込み
@@ -48,30 +52,44 @@ def main():
   while not exit_flag:
 
     # システムイベントの検出
-    cmd_move = -1
     for event in pg.event.get():
       if event.type == pg.QUIT:  # ウィンドウ[X]の押下
         exit_flag = True
         exit_code = '001'
+      # 移動操作の「キー離し」の受け取り処理
+      if event.type == pg.KEYUP:
+        if event.key == pg.K_w and cmd_move == 0:
+          cmd_move = -1
+        elif event.key == pg.K_d and cmd_move == 1:
+          cmd_move = -1
+        elif event.key == pg.K_s and cmd_move == 2:
+          cmd_move = -1
+        elif event.key == pg.K_a and cmd_move == 3:
+          cmd_move = -1
       # 移動操作の「キー入力」の受け取り処理
       if event.type == pg.KEYDOWN:
-        if event.key == pg.K_UP:
+        if event.key == pg.K_w:
           cmd_move = 0
-        elif event.key == pg.K_RIGHT:
+        elif event.key == pg.K_d:
           cmd_move = 1
-        elif event.key == pg.K_DOWN:
+        elif event.key == pg.K_s:
           cmd_move = 2
-        elif event.key == pg.K_LEFT:
+        elif event.key == pg.K_a:
           cmd_move = 3
 
     # 背景描画
     screen.fill(pg.Color('WHITE'))
 
+    # 地面描画
+    for x in range(0, disp_w, int(background_s.x)):
+      for y in range(0, disp_h, int(background_s.y)):
+        screen.blit(background_img, (x, y))
+
     # グリッド
     for x in range(0, disp_w, chip_s):  # 縦線
-      pg.draw.line(screen, grid_c, (x, 0), (x, disp_h))
+      pg.draw.line(screen, grid_cx, (x, 0), (x, disp_h))
     for y in range(0, disp_h, chip_s):  # 横線
-      pg.draw.line(screen, grid_c, (0, y), (disp_w, y))
+      pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
 
     # 移動コマンドの処理
     if cmd_move != -1:
