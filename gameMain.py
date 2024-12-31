@@ -48,6 +48,10 @@ def main():
       reimu_img_arr[i].append(tmp)
     reimu_img_arr[i].append(reimu_img_arr[i][1])
 
+    # 弾画像の読み込み
+  bullet = pg.image.load("Data/img/bullet.png")
+  bullet = pg.transform.scale(bullet, (48, 48))
+
   # ゲームループ
   while not exit_flag:
 
