@@ -1,6 +1,7 @@
 import pygame as pg
+import math as m
 
-def main():
+def Main():
 
   # 初期化処理
   chip_s = 48  # マップチップの基本サイズ
@@ -16,6 +17,13 @@ def main():
   frame = 0
   exit_flag = False
   exit_code = '000'
+  bulletMAX = 100
+  bulletPos = []
+  bulletAddCtrl = False
+  bulletOrgSpeed = 24
+  bulletSpeed = []
+  bulletMaxTime = 30
+  bulletTime = []
 
   background_img = pg.image.load(f'data/img/map-background.png')
   background_s = pg.Vector2(48, 48)
@@ -25,7 +33,11 @@ def main():
   grid_cy = '#0000ff'
 
   # 自キャラ移動関連
-  cmd_move = -1  # 移動コマンドの管理変数
+  cmdWMove = False  # Wキー移動コマンドの管理変数
+  cmdAMove = False  # Aキー移動コマンドの管理変数
+  cmdSMove = False  # Sキー移動コマンドの管理変数
+  cmdDMove = False  # Dキー移動コマンドの管理変数
+  cmd_move = -1  # 移動コマンドの総合管理変数
   m_vec = [
       pg.Vector2(0, -0.2),
       pg.Vector2(0.2, 0),
@@ -50,7 +62,30 @@ def main():
 
     # 弾画像の読み込み
   bullet = pg.image.load("Data/img/bullet.png")
-  bullet = pg.transform.scale(bullet, (48, 48))
+
+  # 弾の追加
+  def BulletAdd():
+
+    bulletPos.append(dp)
+    bulletTime.append(bulletMaxTime)
+    bulletSpeed.append([bulletOrgSpeed, 0])
+    if len(bulletPos) >= bulletMAX:
+      bulletPos.pop(0)
+
+  # 弾の動き
+  def BulletMove():
+
+    for i in range(len(bulletPos)):
+      bulletPos[i] += bulletSpeed[i]
+      for j in range(len(bulletSpeed[i])):
+        bulletSpeed[i][j] *= 0.9
+        bulletTime[i] -= 1
+
+    if len(bulletTime) != 0:
+      if bulletTime[0] <= 0:
+        bulletPos.pop(0)
+        bulletSpeed.pop(0)
+        bulletTime.pop(0)
 
   # ゲームループ
   while not exit_flag:
@@ -62,24 +97,30 @@ def main():
         exit_code = '001'
       # 移動操作の「キー離し」の受け取り処理
       if event.type == pg.KEYUP:
-        if event.key == pg.K_w and cmd_move == 0:
-          cmd_move = -1
-        elif event.key == pg.K_d and cmd_move == 1:
-          cmd_move = -1
-        elif event.key == pg.K_s and cmd_move == 2:
-          cmd_move = -1
-        elif event.key == pg.K_a and cmd_move == 3:
-          cmd_move = -1
+        if event.key == pg.K_w:
+          cmdWMove = False
+        if event.key == pg.K_a:
+          cmdAMove = False
+        if event.key == pg.K_s:
+          cmdSMove = False
+        if event.key == pg.K_d:
+          cmdDMove = False
       # 移動操作の「キー入力」の受け取り処理
       if event.type == pg.KEYDOWN:
         if event.key == pg.K_w:
-          cmd_move = 0
-        elif event.key == pg.K_d:
-          cmd_move = 1
-        elif event.key == pg.K_s:
-          cmd_move = 2
-        elif event.key == pg.K_a:
-          cmd_move = 3
+          cmdWMove = True
+        if event.key == pg.K_a:
+          cmdAMove = True
+        if event.key == pg.K_s:
+          cmdSMove = True
+        if event.key == pg.K_d:
+          cmdDMove = True
+
+      # マウスクリック/クリック離しの受け取り処理
+      if event.type == pg.MOUSEBUTTONDOWN:
+        bulletAddCtrl = True
+      elif event.type == pg.MOUSEBUTTONUP:
+        bulletAddCtrl = False
 
     # 背景描画
     screen.fill(pg.Color('WHITE'))
@@ -96,16 +137,38 @@ def main():
       pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
 
     # 移動コマンドの処理
+    if cmdWMove == True:
+      cmd_move = 0
+    elif cmdDMove == True:
+      cmd_move = 1
+    elif cmdSMove == True:
+      cmd_move = 2
+    elif cmdAMove == True:
+      cmd_move = 3
+    else:
+      cmd_move = -1
+
     if cmd_move != -1:
       reimu_d = cmd_move  # キャラクタの向きを更新
       af_pos = reimu_p + m_vec[cmd_move]  # 移動後の (仮) 座標
       if (0 <= af_pos.x <= map_s.x - 1) and (0 <= af_pos.y <= map_s.y - 1):
         reimu_p += m_vec[cmd_move]  # 画面外に移動しないなら実際のキャラを移動
 
+    # 弾の生成
+    if bulletAddCtrl == True:
+      BulletAdd()
+
     # 自キャラの描画 dp:描画基準点（imgの左上座標）
     dp = reimu_p * chip_s - pg.Vector2(0, 24)
     af = frame // 6 % 4  # 6フレーム毎にアニメーション
     screen.blit(reimu_img_arr[reimu_d][af], dp)
+
+    # 弾の描画
+    for i in range(len(bulletPos)):
+      screen.blit(bullet, bulletPos[i])
+
+    # 弾の移動
+    BulletMove()
 
     # フレームカウンタの描画
     frame += 1
@@ -122,5 +185,5 @@ def main():
   return exit_code
 
 if __name__ == "__main__":
-  code = main()
+  code = Main()
   print(f'プログラムを「コード{code}」で終了しました。')
