@@ -1,5 +1,6 @@
 import pygame as pg
-import math as m
+import numpy as np
+import random as r
 
 def Main():
 
@@ -20,11 +21,15 @@ def Main():
   bulletMAX = 100
   bulletPos = []
   bulletAddCtrl = False
-  bulletOrgSpeed = 24
+  bulletDecay = 1.1  # 弾の減衰率(1以上は加速)
+  bulletOrgSpeed = 5
   bulletSpeed = []
-  bulletMaxTime = 30
+  bulletMaxTime = 50
   bulletTime = []
-  bulletDirTemp = [0, 0]
+  bulletMOA = 100  # MOAとは集弾率のこと 今回は高いほど集団率が悪い
+  bulletROF = 4  # フレームあたりの発射レート
+  bulletDirTemp = []
+  bulletDirRecip = 0.0
 
   background_img = pg.image.load(f'data/img/map-background.png')
   background_s = pg.Vector2(48, 48)
@@ -69,10 +74,13 @@ def Main():
 
     bulletDirTemp = pg.mouse.get_pos()
     bulletDirTemp -= (dp + [24, 36])
+    bulletDirTemp += [r.randint(-bulletMOA, bulletMOA),
+                      r.randint(-bulletMOA, bulletMOA)]
+    bulletDirRecip = 1 / np.sqrt(bulletDirTemp[0]**2 + bulletDirTemp[1]**2)
     for i in range(len(bulletDirTemp)):
-      bulletDirTemp[i] /= 5
+      bulletDirTemp[i] *= bulletDirRecip * bulletOrgSpeed
 
-    if frame % 4 == 0:
+    if frame % bulletROF == 0:
       bulletPos.append(dp + [0, 12])
       bulletTime.append(bulletMaxTime)
       bulletSpeed.append(bulletDirTemp)
@@ -85,7 +93,7 @@ def Main():
     for i in range(len(bulletPos)):
       bulletPos[i] += bulletSpeed[i]
       for j in range(len(bulletSpeed[i])):
-        bulletSpeed[i][j] *= 0.9
+        bulletSpeed[i][j] *= bulletDecay
         bulletTime[i] -= 1
 
     if len(bulletTime) != 0:
@@ -185,7 +193,7 @@ def Main():
 
     # 画面の更新と同期
     pg.display.update()
-    clock.tick(10)
+    clock.tick(30)
 
   # ゲームループ [ここまで]
   pg.quit()
