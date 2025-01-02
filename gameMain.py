@@ -18,6 +18,7 @@ def Main():
   frame = 0
   exit_flag = False
   exit_code = '000'
+
   bulletMAX = 100
   bulletPos = []
   bulletAddCtrl = False
@@ -30,6 +31,8 @@ def Main():
   bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
   bulletDirTemp = []
   bulletDirRecip = 0.0
+
+  HPBarFrame = 4
 
   background_img = pg.image.load(f'data/img/map-background.png')
   background_s = pg.Vector2(48, 48)
@@ -140,7 +143,6 @@ def Main():
     # 背景描画
     screen.fill(pg.Color('WHITE'))
 
-    # 地面描画
     for x in range(0, disp_w, int(background_s.x)):
       for y in range(0, disp_h, int(background_s.y)):
         screen.blit(background_img, (x, y))
@@ -150,6 +152,13 @@ def Main():
       pg.draw.line(screen, grid_cx, (x, 0), (x, disp_h))
     for y in range(0, disp_h, chip_s):  # 横線
       pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
+
+    # HPバーの描画
+    pg.draw.rect(screen, (255, 255, 255), (48 * 1, 48 * 15, 48 * 6, 48 * 1))
+    pg.draw.rect(screen, (66, 0, 0), (48 * 1 + HPBarFrame * 2,
+                 48 * 15 + HPBarFrame, 48 * 6 - (HPBarFrame * 4), 48 * 1 - (HPBarFrame * 2)))
+    pg.draw.rect(screen, (0, 200, 200), (48 * 1 + HPBarFrame * 2,
+                 48 * 15 + HPBarFrame, 48 * 6 - (HPBarFrame * 4), 48 * 1 - (HPBarFrame * 2)))
 
     # 移動コマンドの処理
     if cmdWMove == True:
