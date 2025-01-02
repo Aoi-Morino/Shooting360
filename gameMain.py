@@ -24,6 +24,7 @@ def Main():
   bulletSpeed = []
   bulletMaxTime = 30
   bulletTime = []
+  bulletDirTemp = [0, 0]
 
   background_img = pg.image.load(f'data/img/map-background.png')
   background_s = pg.Vector2(48, 48)
@@ -66,9 +67,15 @@ def Main():
   # 弾の追加
   def BulletAdd():
 
-    bulletPos.append(dp)
-    bulletTime.append(bulletMaxTime)
-    bulletSpeed.append([bulletOrgSpeed, 0])
+    bulletDirTemp = pg.mouse.get_pos()
+    bulletDirTemp -= (dp + [24, 36])
+    for i in range(len(bulletDirTemp)):
+      bulletDirTemp[i] /= 5
+
+    if frame % 4 == 0:
+      bulletPos.append(dp + [0, 12])
+      bulletTime.append(bulletMaxTime)
+      bulletSpeed.append(bulletDirTemp)
     if len(bulletPos) >= bulletMAX:
       bulletPos.pop(0)
 
@@ -178,7 +185,7 @@ def Main():
 
     # 画面の更新と同期
     pg.display.update()
-    clock.tick(30)
+    clock.tick(10)
 
   # ゲームループ [ここまで]
   pg.quit()
