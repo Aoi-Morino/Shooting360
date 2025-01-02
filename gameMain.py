@@ -21,13 +21,13 @@ def Main():
   bulletMAX = 100
   bulletPos = []
   bulletAddCtrl = False
-  bulletDecay = 1.1  # 弾の減衰率(1以上は加速)
-  bulletOrgSpeed = 5
+  bulletDecay = 0.92  # 弾の減衰率(1以上は加速)
+  bulletOrgSpeed = 36
   bulletSpeed = []
   bulletMaxTime = 50
   bulletTime = []
-  bulletMOA = 100  # MOAとは集弾率のこと 今回は高いほど集団率が悪い
-  bulletROF = 4  # フレームあたりの発射レート
+  bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
+  bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
   bulletDirTemp = []
   bulletDirRecip = 0.0
 
