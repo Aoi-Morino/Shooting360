@@ -21,6 +21,7 @@ def Main():
   exit_flag = False
   exit_code = '000'
 
+  # 弾関連
   bulletMAX = 100
   bulletPos = []
   bulletAddCtrl = False
@@ -31,17 +32,20 @@ def Main():
   bulletTime = []
   bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
   bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
-  bulletDirTemp = []
-  bulletDirRecip = 0.0
 
+  # HP関連
+  orgPlayerHP = 100
+  playerHP = orgPlayerHP
+
+  # HPバー関連
   HPBarAllSize = [int(chip_s * 1.3), int(chip_s * 0.13)]
   HPBarFrame = m.floor(chip_s / 40)
   barFrameColor = (255, 255, 255)
   barBackColor = (66, 0, 0)
-  barHPColor = (0, 200, 200)
   barSizeTemp = (HPBarFrame * 2, HPBarFrame, -1 *
                  (HPBarFrame * 4), -1 * (HPBarFrame * 2))
 
+  # 背景関連
   background_s = pg.Vector2(chip_s, chip_s)
   background_img = pg.image.load(f'data/img/map-background.png')
   background_img = pg.transform.scale(background_img, background_s)  # 拡大
@@ -79,6 +83,7 @@ def Main():
   bullet_img = pg.image.load("Data/img/bullet.png")
   bullet_img = pg.transform.scale(bullet_img, bullet_s)  # 拡大
 
+  # * 以下メイン処理
   # 弾の追加
   def BulletAdd():
 
@@ -112,11 +117,18 @@ def Main():
         bulletSpeed.pop(0)
         bulletTime.pop(0)
 
-  # HPバーの更新
+  # TODO HPバーの更新
   def HPBarUpdate():
     global barFrameSize
     global barBackSize
     global barHPSize
+    global barHPColor
+
+    barHPControl = playerHP / orgPlayerHP
+    barHPCC = 255 * barHPControl  # CC=ColorControl
+    if barHPCC >= 255:
+      barHPCC = 255
+    barHPColor = [255 - barHPCC, barHPCC, 0]
 
     barPos_x = dp[0] + (chip_s - HPBarAllSize[0]) / 2
     barPos_y = dp[1] - HPBarAllSize[1]
@@ -128,7 +140,9 @@ def Main():
       barBackSize[i] += barSizeTemp[i]
       barHPSize[i] = barBackSize[i]
 
-  # ゲームループ
+    barHPSize[2] = round(barBackSize[2] * barHPControl)
+
+  # * ゲームループ
   while not exit_flag:
 
     # システムイベントの検出
@@ -156,6 +170,14 @@ def Main():
           cmdMove[2] = True
         if event.key == pg.K_a:
           cmdMove[3] = True
+        if event.key == pg.K_KP_1:
+          playerHP -= 10
+          if playerHP <= 0:
+            playerHP = 0
+        if event.key == pg.K_KP_2:
+          playerHP += 10
+        if event.key == pg.K_KP_3:
+          playerHP = orgPlayerHP
 
       # マウスクリック/クリック離しの受け取り処理
       if event.type == pg.MOUSEBUTTONDOWN:
