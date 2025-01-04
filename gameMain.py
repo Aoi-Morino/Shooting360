@@ -33,6 +33,11 @@ def Main():
   bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
   bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
 
+  # TODO 敵関連
+  enemyPos = [[r.randint(0, int(mapRan[0])),
+               r.randint(0, int(mapRan[1]))]]
+  enemyAddCtrl = True
+
   # HP関連
   orgPlayerHP = 100
   playerHP = orgPlayerHP
@@ -83,6 +88,15 @@ def Main():
   bullet_img = pg.image.load("Data/img/bullet.png")
   bullet_img = pg.transform.scale(bullet_img, bullet_s)  # 拡大
 
+  # 敵画像の読み込み
+  blueSlime_s = pg.Vector2(chip_s, chip_s)
+  blueSlime_img = []
+  blueSlime_imgTmp = pg.image.load("Data/img/blueSlime.png")
+  for i in range(2):
+    tmp = blueSlime_imgTmp.subsurface(pg.Rect((48 * i, 0), (48, 48)))
+    tmp = pg.transform.scale(tmp, blueSlime_s)
+    blueSlime_img.append(tmp)
+
   # * 以下メイン処理
   # 弾の追加
   def BulletAdd():
@@ -117,12 +131,8 @@ def Main():
         bulletSpeed.pop(0)
         bulletTime.pop(0)
 
-  # TODO HPバーの更新
+  # HPバーの更新
   def HPBarUpdate():
-    global barFrameSize
-    global barBackSize
-    global barHPSize
-    global barHPColor
 
     barHPControl = playerHP / orgPlayerHP
     barHPCC = 255 * barHPControl  # CC=ColorControl
@@ -142,7 +152,14 @@ def Main():
 
     barHPSize[2] = round(barBackSize[2] * barHPControl)
 
-  # * ゲームループ
+    pg.draw.rect(screen, barFrameColor, barFrameSize)
+    pg.draw.rect(screen, barBackColor, barBackSize)
+    pg.draw.rect(screen, barHPColor, barHPSize)
+
+  # TODO 敵の追加
+  # def enemyAdd():
+
+    # * ゲームループ
   while not exit_flag:
 
     # システムイベントの検出
@@ -225,9 +242,11 @@ def Main():
 
     # HPバーの描画
     HPBarUpdate()
-    pg.draw.rect(screen, barFrameColor, barFrameSize)
-    pg.draw.rect(screen, barBackColor, barBackSize)
-    pg.draw.rect(screen, barHPColor, barHPSize)
+
+    # 敵の描画
+    af = frame // 12 % 2
+    for i in range(len(enemyPos)):
+      screen.blit(blueSlime_img[af], enemyPos[i])
 
     # フレームカウンタの描画
     frame += 1
