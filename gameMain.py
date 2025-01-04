@@ -6,7 +6,7 @@ import math as m
 def Main():
 
   # 初期化処理
-  chip_s = 48  # マップチップの基本サイズ
+  chip_s = 96  # マップチップの基本サイズ
   map_s = pg.Vector2(1550 / chip_s, 810 / chip_s)  # マップの横・縦の配置数
   mapRan = chip_s * map_s
 
@@ -34,9 +34,11 @@ def Main():
   bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
 
   # TODO 敵関連
+  damageHit = False
   enemyPos = [[r.randint(0, int(mapRan[0])),
                r.randint(0, int(mapRan[1]))]]
   enemyAddCtrl = True
+  invincibleCtrl = 0
 
   # HP関連
   orgPlayerHP = 100
@@ -62,23 +64,23 @@ def Main():
   # 自キャラ移動関連
   cmdMove = [False, False, False, False]  # 移動コマンドの総合管理変数
   m_vec = [
-      pg.Vector2(0, -0.2),
+      pg.Vector2(-0.2, 0),
       pg.Vector2(0.2, 0),
-      pg.Vector2(0, 0.2),
-      pg.Vector2(-0.2, 0)
+      pg.Vector2(0, -0.2),
+      pg.Vector2(0, 0.2)
   ]  # 移動コマンドに対応したXYの移動量
 
   # 自キャラの画像読込み
   reimu_p = pg.Vector2(2, 3)   # 自キャラ位置
   reimu_s = pg.Vector2(chip_s, chip_s * 1.5)  # 画面に出力する自キャラサイズをマップチップに合わせる
   reimu_d = 2  # 自キャラの向き
-  reimu_img_raw = pg.image.load('./data/img/reimu.png')
+  reimu_img_raw = pg.image.load('./data/img/PlayerChara.png')
   reimu_img_arr = []
-  for i in range(4):   # 上右下左の4方向
+  for i in range(8):   # 上右下左の4*被弾時2の8差分
     reimu_img_arr.append([])
     for j in range(3):  # アニメーションパターンx3
-      p = pg.Vector2(24 * j, 32 * i)  # 切り抜きの開始座標・左上
-      tmp = reimu_img_raw.subsurface(pg.Rect(p, (24, 32)))  # 切り出し
+      p = pg.Vector2(24 * j, 36 * i)  # 切り抜きの開始座標・左上
+      tmp = reimu_img_raw.subsurface(pg.Rect(p, (24, 36)))  # 切り出し
       tmp = pg.transform.scale(tmp, reimu_s)  # 拡大
       reimu_img_arr[i].append(tmp)
     reimu_img_arr[i].append(reimu_img_arr[i][1])
@@ -159,6 +161,12 @@ def Main():
   # TODO 敵の追加
   # def enemyAdd():
 
+  # TODO ダメージ判定
+  def DamageCtrl(damageHit):
+    if frame == invincibleCtrl:
+      damageHit = False
+    return (damageHit)
+
     # * ゲームループ
   while not exit_flag:
 
@@ -169,23 +177,23 @@ def Main():
         exit_code = '001'
       # 移動操作の「キー離し」の受け取り処理
       if event.type == pg.KEYUP:
-        if event.key == pg.K_w:
+        if event.key == pg.K_a:
           cmdMove[0] = False
         if event.key == pg.K_d:
           cmdMove[1] = False
-        if event.key == pg.K_s:
+        if event.key == pg.K_w:
           cmdMove[2] = False
-        if event.key == pg.K_a:
+        if event.key == pg.K_s:
           cmdMove[3] = False
       # 移動操作の「キー入力」の受け取り処理
       if event.type == pg.KEYDOWN:
-        if event.key == pg.K_w:
+        if event.key == pg.K_a:
           cmdMove[0] = True
         if event.key == pg.K_d:
           cmdMove[1] = True
-        if event.key == pg.K_s:
+        if event.key == pg.K_w:
           cmdMove[2] = True
-        if event.key == pg.K_a:
+        if event.key == pg.K_s:
           cmdMove[3] = True
         if event.key == pg.K_KP_1:
           playerHP -= 10
@@ -195,6 +203,9 @@ def Main():
           playerHP += 10
         if event.key == pg.K_KP_3:
           playerHP = orgPlayerHP
+        if event.key == pg.K_KP_4:
+          damageHit = True
+          invincibleCtrl = frame + 30
 
       # マウスクリック/クリック離しの受け取り処理
       if event.type == pg.MOUSEBUTTONDOWN:
@@ -216,7 +227,6 @@ def Main():
       pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
 
     # 移動コマンドの処理
-
     for i in range(len(cmdMove)):
       if cmdMove[i] == True:
         reimu_d = i  # キャラクタの向きを更新
@@ -228,10 +238,17 @@ def Main():
     if bulletAddCtrl == True:
       BulletAdd()
 
+    # ダメージ判定
+    damageHit = DamageCtrl(damageHit)
+
     # 自キャラの描画 dp:描画基準点（imgの左上座標）
     dp = reimu_p * chip_s - pg.Vector2(0, 24)
     af = frame // 6 % 4  # 6フレーム毎にアニメーション
+    if damageHit == True:
+      reimu_d += 4
     screen.blit(reimu_img_arr[reimu_d][af], dp)
+    if damageHit == True:
+      reimu_d -= 4
 
     # 弾の描画
     for i in range(len(bulletPos)):
