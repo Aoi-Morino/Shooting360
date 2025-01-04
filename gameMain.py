@@ -37,6 +37,7 @@ def Main():
   damageHit = False
   enemyPos = [[r.randint(0, int(mapRan[0])),
                r.randint(0, int(mapRan[1]))]]
+  enemyRect = [pg.Rect(0, 0, 0, 0)]
   enemyAddCtrl = True
   invincibleCtrl = 0
 
@@ -71,7 +72,7 @@ def Main():
   ]  # 移動コマンドに対応したXYの移動量
 
   # 自キャラの画像読込み
-  reimu_p = pg.Vector2(2, 3)   # 自キャラ位置
+  reimu_p = pg.Vector2(map_s[0] / 2, map_s[1] / 2)   # 自キャラ位置
   reimu_s = pg.Vector2(chip_s, chip_s * 1.5)  # 画面に出力する自キャラサイズをマップチップに合わせる
   reimu_d = 2  # 自キャラの向き
   reimu_img_raw = pg.image.load('./data/img/PlayerChara.png')
@@ -162,10 +163,17 @@ def Main():
   # def enemyAdd():
 
   # TODO ダメージ判定
-  def DamageCtrl(damageHit):
+  def DamageCtrl(damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect):
+    for i in range(len(enemyRect)):
+      if playerCharaRect.colliderect(enemyRect[i]) and damageHit == False:
+        damageHit = True
+        invincibleCtrl = frame + 30
+        playerHP -= 10
+        if playerHP <= 0:
+          playerHP = 0
     if frame == invincibleCtrl:
       damageHit = False
-    return (damageHit)
+    return (damageHit, playerHP, invincibleCtrl)
 
     # * ゲームループ
   while not exit_flag:
@@ -238,17 +246,20 @@ def Main():
     if bulletAddCtrl == True:
       BulletAdd()
 
-    # ダメージ判定
-    damageHit = DamageCtrl(damageHit)
-
     # 自キャラの描画 dp:描画基準点（imgの左上座標）
     dp = reimu_p * chip_s - pg.Vector2(0, 24)
     af = frame // 6 % 4  # 6フレーム毎にアニメーション
     if damageHit == True:
       reimu_d += 4
+    playerCharaRect = pg.Rect(dp[0], dp[1], reimu_s[0], reimu_s[1])
+    # pg.draw.rect(screen, (0, 0, 0), playerCharaRect) #!当たり判定テスト用
     screen.blit(reimu_img_arr[reimu_d][af], dp)
     if damageHit == True:
       reimu_d -= 4
+
+    # ダメージ判定
+    damageHit, playerHP, invincibleCtrl = DamageCtrl(
+        damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
 
     # 弾の描画
     for i in range(len(bulletPos)):
@@ -263,6 +274,9 @@ def Main():
     # 敵の描画
     af = frame // 12 % 2
     for i in range(len(enemyPos)):
+      enemyRect[i] = pg.Rect(enemyPos[i][0], enemyPos[i]
+                             [1] + 14, chip_s, chip_s - 24)
+      # pg.draw.rect(screen, (0, 0, 0), enemyRect[i]) #!当たり判定テスト用
       screen.blit(blueSlime_img[af], enemyPos[i])
 
     # フレームカウンタの描画
