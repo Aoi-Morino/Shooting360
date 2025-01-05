@@ -6,7 +6,7 @@ import math as m
 def Main():
 
   # 初期化処理
-  chip_s = 96  # マップチップの基本サイズ
+  chip_s = 48  # マップチップの基本サイズ
   map_s = pg.Vector2(1550 / chip_s, 810 / chip_s)  # マップの横・縦の配置数
   mapRan = chip_s * map_s
 
@@ -28,17 +28,17 @@ def Main():
   bulletDecay = 0.92  # 弾の減衰率(1以上は加速)
   bulletOrgSpeed = chip_s * 3 / 4
   bulletSpeed = []
-  bulletMaxTime = 50
+  bulletMaxTime = chip_s
   bulletTime = []
   bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
   bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
+  bulletRect = []
 
-  # TODO 敵関連
+  # 敵関連
   damageHit = False
-  enemyPos = [[r.randint(0, int(mapRan[0])),
-               r.randint(0, int(mapRan[1]))]]
-  enemyRect = [pg.Rect(0, 0, 0, 0)]
-  enemyAddCtrl = True
+  enemyPos = []
+  enemyRect = []
+  enemyMax = 100
   invincibleCtrl = 0
 
   # HP関連
@@ -70,6 +70,7 @@ def Main():
       pg.Vector2(0, -0.2),
       pg.Vector2(0, 0.2)
   ]  # 移動コマンドに対応したXYの移動量
+  safetyWidth = chip_s * 1
 
   # 自キャラの画像読込み
   reimu_p = pg.Vector2(map_s[0] / 2, map_s[1] / 2)   # 自キャラ位置
@@ -116,14 +117,21 @@ def Main():
       bulletPos.append(dp + [0, chip_s / 4])
       bulletTime.append(bulletMaxTime)
       bulletSpeed.append(bulletDirTemp)
+      bulletRect.append(
+          pg.Rect(bulletPos[-1][0], bulletPos[-1][1], bullet_s[0], bullet_s[1]))
     if len(bulletPos) >= bulletMAX:
       bulletPos.pop(0)
+      bulletSpeed.pop(0)
+      bulletTime.pop(0)
+      bulletRect.pop(0)
 
   # 弾の動き
   def BulletMove():
 
     for i in range(len(bulletPos)):
       bulletPos[i] += bulletSpeed[i]
+      bulletRect[i] = pg.Rect(bulletPos[i][0], bulletPos[i]
+                              [1], bulletRect[i][2], bulletRect[i][3])
       for j in range(len(bulletSpeed[i])):
         bulletSpeed[i][j] *= bulletDecay
         bulletTime[i] -= 1
@@ -133,6 +141,7 @@ def Main():
         bulletPos.pop(0)
         bulletSpeed.pop(0)
         bulletTime.pop(0)
+        bulletRect.pop(0)
 
   # HPバーの更新
   def HPBarUpdate():
@@ -160,9 +169,23 @@ def Main():
     pg.draw.rect(screen, barHPColor, barHPSize)
 
   # TODO 敵の追加
-  # def enemyAdd():
+  def enemyAdd():
+    if len(enemyPos) < enemyMax:
+      safetyViolation = True
+      while safetyViolation == True:
+        posTemp = [r.randint(0, int(mapRan[0])),
+                   r.randint(0, int(mapRan[1]))]
+        rectTemp = pg.Rect(posTemp[0], posTemp[1] + 14,
+                           chip_s, chip_s - 24)
+        if safetyRect.colliderect(rectTemp):
+          safetyViolation = True
+        else:
+          safetyViolation = False
 
-  # TODO ダメージ判定
+      enemyRect.append(rectTemp)
+      enemyPos.append(posTemp)
+
+  # ダメージ判定
   def DamageCtrl(damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect):
     for i in range(len(enemyRect)):
       if playerCharaRect.colliderect(enemyRect[i]) and damageHit == False:
@@ -174,6 +197,28 @@ def Main():
     if frame == invincibleCtrl:
       damageHit = False
     return (damageHit, playerHP, invincibleCtrl)
+
+  # 撃破判定
+  def KillCtrl(bulletRect, enemyRect):
+    Hit = False
+    enemyKill = 0
+    bulletKill = 0
+    for i in range(len(enemyRect)):
+      for j in range(len(bulletRect)):
+        if bulletRect[j].colliderect(enemyRect[i]):
+          Hit = True
+          enemyKill = i
+          bulletKill = j
+
+    if Hit == True:
+      enemyPos.pop(enemyKill)
+      enemyRect.pop(enemyKill)
+      bulletPos.pop(bulletKill)
+      bulletSpeed.pop(bulletKill)
+      bulletTime.pop(bulletKill)
+      bulletRect.pop(bulletKill)
+
+    return (bulletRect, enemyRect)
 
     # * ゲームループ
   while not exit_flag:
@@ -252,7 +297,12 @@ def Main():
     if damageHit == True:
       reimu_d += 4
     playerCharaRect = pg.Rect(dp[0], dp[1], reimu_s[0], reimu_s[1])
-    # pg.draw.rect(screen, (0, 0, 0), playerCharaRect) #!当たり判定テスト用
+    safetyRect = pg.Rect(playerCharaRect[0] - safetyWidth,
+                         playerCharaRect[1] - safetyWidth,
+                         playerCharaRect[2] + safetyWidth * 2,
+                         playerCharaRect[3] + safetyWidth * 2)
+    pg.draw.rect(screen, (100, 100, 100), safetyRect)  # !当たり判定テスト用
+    pg.draw.rect(screen, (0, 0, 0), playerCharaRect)
     screen.blit(reimu_img_arr[reimu_d][af], dp)
     if damageHit == True:
       reimu_d -= 4
@@ -261,8 +311,12 @@ def Main():
     damageHit, playerHP, invincibleCtrl = DamageCtrl(
         damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
 
+    # 討伐判定
+    bulletRect, enemyRect = KillCtrl(bulletRect, enemyRect)
+
     # 弾の描画
     for i in range(len(bulletPos)):
+      # pg.draw.rect(screen, (255, 255, 255), bulletRect[i])  # !当たり判定テスト用6
       screen.blit(bullet_img, bulletPos[i])
 
     # 弾の移動
@@ -271,12 +325,13 @@ def Main():
     # HPバーの描画
     HPBarUpdate()
 
+    # 敵の追加
+    enemyAdd()
+
     # 敵の描画
     af = frame // 12 % 2
     for i in range(len(enemyPos)):
-      enemyRect[i] = pg.Rect(enemyPos[i][0], enemyPos[i]
-                             [1] + 14, chip_s, chip_s - 24)
-      # pg.draw.rect(screen, (0, 0, 0), enemyRect[i]) #!当たり判定テスト用
+      # pg.draw.rect(screen, (0, 0, 0), enemyRect[i])  # !当たり判定テスト用
       screen.blit(blueSlime_img[af], enemyPos[i])
 
     # フレームカウンタの描画
