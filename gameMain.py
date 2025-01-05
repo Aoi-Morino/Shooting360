@@ -39,6 +39,8 @@ def Main():
   enemyPos = []
   enemyRect = []
   enemyMax = 100
+  enemyROA = 10
+  blueSlimeSpeed = 5
   invincibleCtrl = 0
   killPoint = 0
 
@@ -103,10 +105,10 @@ def Main():
     blueSlime_img.append(tmp)
 
   # * 以下メイン処理
-  # 弾の追加
+  # ? 弾の追加
   def BulletAdd():
 
-    bulletDirTemp = pg.mouse.get_pos()
+    bulletDirTemp = pg.mouse.get_pos()  # Dir = direction(方向)
     bulletDirTemp -= (dp + [chip_s / 2, chip_s * 3 / 4])
     bulletDirTemp += [r.randint(-bulletMOA, bulletMOA),
                       r.randint(-bulletMOA, bulletMOA)]
@@ -171,13 +173,13 @@ def Main():
 
   # 敵の追加
   def enemyAdd():
-    if len(enemyPos) < enemyMax:
+    if len(enemyPos) < enemyMax and frame % enemyROA == 0:
       safetyViolation = True
       while safetyViolation == True:
         posTemp = [r.randint(0, int(mapRan[0])),
                    r.randint(0, int(mapRan[1]))]
-        rectTemp = pg.Rect(posTemp[0], posTemp[1] + 14,
-                           chip_s, chip_s - 24)
+        rectTemp = pg.Rect(posTemp[0], posTemp[1],
+                           chip_s, chip_s)
         if safetyRect.colliderect(rectTemp):
           safetyViolation = True
         else:
@@ -186,7 +188,21 @@ def Main():
       enemyRect.append(rectTemp)
       enemyPos.append(posTemp)
 
+  # TODO 敵の移動
+  def EnemyMove():
+    enemySpeed = []
+    for i in range(len(enemyPos)):
+      enemyDirTemp = dp + [0, chip_s / 4]
+      enemyDirTemp -= enemyPos[i]
+      enemyDirRecip = 1 / np.sqrt(enemyDirTemp[0]**2 + enemyDirTemp[1]**2)
+      enemyDirTemp *= enemyDirRecip * blueSlimeSpeed
+      enemySpeed.append(enemyDirTemp)
+      for j in range(len(enemyPos[i])):
+        enemyPos[i][j] += enemySpeed[i][j]
+        enemyRect[i][j] = enemyPos[i][j]
+
   # ダメージ判定
+
   def DamageCtrl(damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect):
     for i in range(len(enemyRect)):
       if playerCharaRect.colliderect(enemyRect[i]) and damageHit == False:
@@ -329,6 +345,9 @@ def Main():
 
     # HPバーの描画
     HPBarUpdate()
+
+    # 敵の移動
+    EnemyMove()
 
     # 敵の追加
     enemyAdd()
