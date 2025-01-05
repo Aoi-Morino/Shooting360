@@ -31,7 +31,7 @@ def Main():
   bulletMaxTime = chip_s
   bulletTime = []
   bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
-  bulletROF = 4  # フレームあたりの発射レート(Rate of Fire)
+  bulletROF = 4  # 何フレームごとに発射するか(Rate of Fire)
   bulletRect = []
 
   # 敵関連
@@ -40,6 +40,7 @@ def Main():
   enemyRect = []
   enemyMax = 100
   invincibleCtrl = 0
+  killPoint = 0
 
   # HP関連
   orgPlayerHP = 100
@@ -168,7 +169,7 @@ def Main():
     pg.draw.rect(screen, barBackColor, barBackSize)
     pg.draw.rect(screen, barHPColor, barHPSize)
 
-  # TODO 敵の追加
+  # 敵の追加
   def enemyAdd():
     if len(enemyPos) < enemyMax:
       safetyViolation = True
@@ -199,7 +200,7 @@ def Main():
     return (damageHit, playerHP, invincibleCtrl)
 
   # 撃破判定
-  def KillCtrl(bulletRect, enemyRect):
+  def KillCtrl(bulletRect, enemyRect, killPoint):
     Hit = False
     enemyKill = 0
     bulletKill = 0
@@ -217,8 +218,9 @@ def Main():
       bulletSpeed.pop(bulletKill)
       bulletTime.pop(bulletKill)
       bulletRect.pop(bulletKill)
+      killPoint += 1
 
-    return (bulletRect, enemyRect)
+    return (bulletRect, enemyRect, killPoint)
 
     # * ゲームループ
   while not exit_flag:
@@ -259,6 +261,8 @@ def Main():
         if event.key == pg.K_KP_4:
           damageHit = True
           invincibleCtrl = frame + 30
+        if event.key == pg.K_KP_5:
+          bulletAddCtrl = True
 
       # マウスクリック/クリック離しの受け取り処理
       if event.type == pg.MOUSEBUTTONDOWN:
@@ -301,8 +305,8 @@ def Main():
                          playerCharaRect[1] - safetyWidth,
                          playerCharaRect[2] + safetyWidth * 2,
                          playerCharaRect[3] + safetyWidth * 2)
-    pg.draw.rect(screen, (100, 100, 100), safetyRect)  # !当たり判定テスト用
-    pg.draw.rect(screen, (0, 0, 0), playerCharaRect)
+    # pg.draw.rect(screen, (100, 100, 100), safetyRect)  # !当たり判定テスト用
+    # pg.draw.rect(screen, (0, 0, 0), playerCharaRect)
     screen.blit(reimu_img_arr[reimu_d][af], dp)
     if damageHit == True:
       reimu_d -= 4
@@ -312,7 +316,8 @@ def Main():
         damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
 
     # 討伐判定
-    bulletRect, enemyRect = KillCtrl(bulletRect, enemyRect)
+    bulletRect, enemyRect, killPoint = KillCtrl(
+        bulletRect, enemyRect, killPoint)
 
     # 弾の描画
     for i in range(len(bulletPos)):
@@ -339,6 +344,7 @@ def Main():
     frm_str = f'{frame:05}'
     screen.blit(font.render(frm_str, True, 'BLACK'), (10, 10))
     screen.blit(font.render(f'{reimu_p}', True, 'BLACK'), (10, 20))
+    screen.blit(font.render(f"Kill:{killPoint}", True, "BLACK"), (10, 30))
 
     # 画面の更新と同期
     pg.display.update()
