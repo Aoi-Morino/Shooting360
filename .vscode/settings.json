@@ -5,6 +5,7 @@
         "Chara",
         "colliderect",
         "disp",
+        "GAMEOVER",
         "HPCC",
         "KEYUP",
         "MOUSEBUTTONDOWN",

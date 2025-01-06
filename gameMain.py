@@ -21,6 +21,8 @@ def Main():
   exit_flag = False
   exit_code = '000'
 
+  gameState = "GAMEOVER"
+
   # 弾関連
   bulletMAX = 100
   bulletPos = []
@@ -278,132 +280,145 @@ def Main():
     # * ゲームループ
   while not exit_flag:
 
-    # システムイベントの検出
-    for event in pg.event.get():
-      if event.type == pg.QUIT:  # ウィンドウ[X]の押下
-        exit_flag = True
-        exit_code = '001'
-      # 移動操作の「キー離し」の受け取り処理
-      if event.type == pg.KEYUP:
-        if event.key == pg.K_a:
-          cmdMove[0] = False
-        if event.key == pg.K_d:
-          cmdMove[1] = False
-        if event.key == pg.K_w:
-          cmdMove[2] = False
-        if event.key == pg.K_s:
-          cmdMove[3] = False
-      # 移動操作の「キー入力」の受け取り処理
-      if event.type == pg.KEYDOWN:
-        if event.key == pg.K_a:
-          cmdMove[0] = True
-        if event.key == pg.K_d:
-          cmdMove[1] = True
-        if event.key == pg.K_w:
-          cmdMove[2] = True
-        if event.key == pg.K_s:
-          cmdMove[3] = True
-        if event.key == pg.K_KP_1:
-          playerHP -= 10
-          if playerHP <= 0:
-            playerHP = 0
-        if event.key == pg.K_KP_2:
-          playerHP += 10
-        if event.key == pg.K_KP_3:
-          playerHP = orgPlayerHP
-        if event.key == pg.K_KP_4:
-          damageHit = True
-          invincibleCtrl = frame + 30
-        if event.key == pg.K_KP_5:
+    if gameState == "PLAY":
+      # システムイベントの検出
+      for event in pg.event.get():
+        if event.type == pg.QUIT:  # ウィンドウ[X]の押下
+          exit_flag = True
+          exit_code = '001'
+        # 移動操作の「キー離し」の受け取り処理
+        if event.type == pg.KEYUP:
+          if event.key == pg.K_a:
+            cmdMove[0] = False
+          if event.key == pg.K_d:
+            cmdMove[1] = False
+          if event.key == pg.K_w:
+            cmdMove[2] = False
+          if event.key == pg.K_s:
+            cmdMove[3] = False
+        # 移動操作の「キー入力」の受け取り処理
+        if event.type == pg.KEYDOWN:
+          if event.key == pg.K_a:
+            cmdMove[0] = True
+          if event.key == pg.K_d:
+            cmdMove[1] = True
+          if event.key == pg.K_w:
+            cmdMove[2] = True
+          if event.key == pg.K_s:
+            cmdMove[3] = True
+          if event.key == pg.K_KP_1:
+            playerHP -= 10
+            if playerHP <= 0:
+              playerHP = 0
+          if event.key == pg.K_KP_2:
+            playerHP += 10
+          if event.key == pg.K_KP_3:
+            playerHP = orgPlayerHP
+          if event.key == pg.K_KP_4:
+            damageHit = True
+            invincibleCtrl = frame + 30
+          if event.key == pg.K_KP_5:
+            bulletAddCtrl = True
+
+        # マウスクリック/クリック離しの受け取り処理
+        if event.type == pg.MOUSEBUTTONDOWN:
           bulletAddCtrl = True
+        elif event.type == pg.MOUSEBUTTONUP:
+          bulletAddCtrl = False
 
-      # マウスクリック/クリック離しの受け取り処理
-      if event.type == pg.MOUSEBUTTONDOWN:
-        bulletAddCtrl = True
-      elif event.type == pg.MOUSEBUTTONUP:
-        bulletAddCtrl = False
+      # 背景描画
+      screen.fill(pg.Color('WHITE'))
 
-    # 背景描画
-    screen.fill(pg.Color('WHITE'))
+      for x in range(0, int(map_s.x) + 1):
+        for y in range(0, int(map_s.y) + 1):
+          screen.blit(background_img, (chip_s * x, chip_s * y))
 
-    for x in range(0, int(map_s.x) + 1):
-      for y in range(0, int(map_s.y) + 1):
-        screen.blit(background_img, (chip_s * x, chip_s * y))
+      # グリッド
+      for x in range(0, disp_w, chip_s):  # 縦線
+        pg.draw.line(screen, grid_cx, (x, 0), (x, disp_h))
+      for y in range(0, disp_h, chip_s):  # 横線
+        pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
 
-    # グリッド
-    for x in range(0, disp_w, chip_s):  # 縦線
-      pg.draw.line(screen, grid_cx, (x, 0), (x, disp_h))
-    for y in range(0, disp_h, chip_s):  # 横線
-      pg.draw.line(screen, grid_cy, (0, y), (disp_w, y))
+      # 移動コマンドの処理
+      for i in range(len(cmdMove)):
+        if cmdMove[i] == True:
+          reimu_d = i  # キャラクタの向きを更新
+          af_pos = reimu_p + m_vec[i]  # 移動後の (仮) 座標
+          if (0 <= af_pos.x <= map_s.x - 1) and (0 <= af_pos.y <= map_s.y - 1):
+            reimu_p += m_vec[i]  # 画面外に移動しないなら実際のキャラを移動
 
-    # 移動コマンドの処理
-    for i in range(len(cmdMove)):
-      if cmdMove[i] == True:
-        reimu_d = i  # キャラクタの向きを更新
-        af_pos = reimu_p + m_vec[i]  # 移動後の (仮) 座標
-        if (0 <= af_pos.x <= map_s.x - 1) and (0 <= af_pos.y <= map_s.y - 1):
-          reimu_p += m_vec[i]  # 画面外に移動しないなら実際のキャラを移動
+      # 弾の生成
+      if bulletAddCtrl == True:
+        BulletAdd()
 
-    # 弾の生成
-    if bulletAddCtrl == True:
-      BulletAdd()
+      # 自キャラの描画 dp:描画基準点（imgの左上座標）
+      dp = reimu_p * chip_s - pg.Vector2(0, 24)
+      af = frame // 6 % 4  # 6フレーム毎にアニメーション
+      if damageHit == True:
+        reimu_d += 4
+      playerCharaRect = pg.Rect(dp[0], dp[1], reimu_s[0], reimu_s[1])
+      safetyRect = pg.Rect(playerCharaRect[0] - safetyWidth,
+                           playerCharaRect[1] - safetyWidth,
+                           playerCharaRect[2] + safetyWidth * 2,
+                           playerCharaRect[3] + safetyWidth * 2)
+      # pg.draw.rect(screen, (100, 100, 100), safetyRect)  # !当たり判定テスト用
+      # pg.draw.rect(screen, (0, 0, 0), playerCharaRect)
+      screen.blit(reimu_img_arr[reimu_d][af], dp)
+      if damageHit == True:
+        reimu_d -= 4
 
-    # 自キャラの描画 dp:描画基準点（imgの左上座標）
-    dp = reimu_p * chip_s - pg.Vector2(0, 24)
-    af = frame // 6 % 4  # 6フレーム毎にアニメーション
-    if damageHit == True:
-      reimu_d += 4
-    playerCharaRect = pg.Rect(dp[0], dp[1], reimu_s[0], reimu_s[1])
-    safetyRect = pg.Rect(playerCharaRect[0] - safetyWidth,
-                         playerCharaRect[1] - safetyWidth,
-                         playerCharaRect[2] + safetyWidth * 2,
-                         playerCharaRect[3] + safetyWidth * 2)
-    # pg.draw.rect(screen, (100, 100, 100), safetyRect)  # !当たり判定テスト用
-    # pg.draw.rect(screen, (0, 0, 0), playerCharaRect)
-    screen.blit(reimu_img_arr[reimu_d][af], dp)
-    if damageHit == True:
-      reimu_d -= 4
+      # ダメージ判定
+      damageHit, playerHP, invincibleCtrl = DamageCtrl(
+          damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
 
-    # ダメージ判定
-    damageHit, playerHP, invincibleCtrl = DamageCtrl(
-        damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
+      # 討伐判定
+      bulletRect, enemyRect, killPoint = KillCtrl(
+          bulletRect, enemyRect, killPoint)
 
-    # 討伐判定
-    bulletRect, enemyRect, killPoint = KillCtrl(
-        bulletRect, enemyRect, killPoint)
+      # 弾の描画
+      for i in range(len(bulletPos)):
+        # pg.draw.rect(screen, (255, 255, 255), bulletRect[i])  # !当たり判定テスト用6
+        screen.blit(bullet_img, bulletPos[i])
 
-    # 弾の描画
-    for i in range(len(bulletPos)):
-      # pg.draw.rect(screen, (255, 255, 255), bulletRect[i])  # !当たり判定テスト用6
-      screen.blit(bullet_img, bulletPos[i])
+      # 弾の移動
+      BulletMove()
 
-    # 弾の移動
-    BulletMove()
+      # PC_HPバーの描画
+      HPBarUpdate()
 
-    # PC_HPバーの描画
-    HPBarUpdate()
+      # 敵の移動
+      EnemyMove()
 
-    # 敵の移動
-    EnemyMove()
+      # 敵の追加
+      enemyAdd()
 
-    # 敵の追加
-    enemyAdd()
+      # 敵の描画
+      af = frame // 12 % 2
+      for i in range(len(enemyPos)):
+        # pg.draw.rect(screen, (0, 0, 0), enemyRect[i])  # !当たり判定テスト用
+        screen.blit(blueSlime_img[af], enemyPos[i])
 
-    # 敵の描画
-    af = frame // 12 % 2
-    for i in range(len(enemyPos)):
-      # pg.draw.rect(screen, (0, 0, 0), enemyRect[i])  # !当たり判定テスト用
-      screen.blit(blueSlime_img[af], enemyPos[i])
+      # 敵_HPバーの描画
+      EnemyHPBarUpdate()
 
-    # 敵_HPバーの描画
-    EnemyHPBarUpdate()
+      # フレームカウンタの描画
+      frame += 1
+      frm_str = f'{frame:05}'
+      screen.blit(font.render(frm_str, True, 'BLACK'), (10, 10))
+      screen.blit(font.render(f'{reimu_p}', True, 'BLACK'), (10, 20))
+      screen.blit(font.render(f"Kill:{killPoint}", True, "BLACK"), (10, 30))
 
-    # フレームカウンタの描画
-    frame += 1
-    frm_str = f'{frame:05}'
-    screen.blit(font.render(frm_str, True, 'BLACK'), (10, 10))
-    screen.blit(font.render(f'{reimu_p}', True, 'BLACK'), (10, 20))
-    screen.blit(font.render(f"Kill:{killPoint}", True, "BLACK"), (10, 30))
+    if gameState == "GAMEOVER":
+
+      for event in pg.event.get():
+        if event.type == pg.QUIT:  # ウィンドウ[X]の押下
+          exit_flag = True
+          exit_code = '001'
+
+      gameover_font = pg.font.SysFont("Norwester", 80)
+      gameover = gameover_font.render("You Died!", False, (255, 0, 0))
+      gameoverRect = gameover.get_rect(center=(mapRan[0] // 2, mapRan[1] // 2))
+      screen.blit(gameover, gameoverRect)
 
     # 画面の更新と同期
     pg.display.update()
