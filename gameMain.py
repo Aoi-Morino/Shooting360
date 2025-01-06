@@ -149,9 +149,8 @@ def Main():
         bulletTime.pop(0)
         bulletRect.pop(0)
 
-  # HPバーの更新
+  # PC_HPバーの更新
   def HPBarUpdate():
-
     barHPControl = playerHP / orgPlayerHP
     barHPCC = 255 * barHPControl  # CC=ColorControl
     if barHPCC >= 255:
@@ -174,7 +173,33 @@ def Main():
     pg.draw.rect(screen, barBackColor, barBackSize)
     pg.draw.rect(screen, barHPColor, barHPSize)
 
+  # 敵_HPバーの更新
+  def EnemyHPBarUpdate():
+    for i in range(len(enemyHP)):
+      barHPControl = enemyHP[i] / orgBlueslimeHP
+      barHPCC = 255 * barHPControl  # CC=ColorControl
+      if barHPCC >= 255:
+        barHPCC = 255
+      barHPColor = [255 - barHPCC, barHPCC, 0]
+
+      barPos_x = enemyPos[i][0] + (chip_s - HPBarAllSize[0]) / 2
+      barPos_y = enemyPos[i][1] - HPBarAllSize[1]
+      barFrameSize = [barPos_x, barPos_y, HPBarAllSize[0], HPBarAllSize[1]]
+      barBackSize = [0, 0, 0, 0]
+      barHPSize = [0, 0, 0, 0]
+      for j in range(len(barFrameSize)):
+        barBackSize[j] = barFrameSize[j]
+        barBackSize[j] += barSizeTemp[j]
+        barHPSize[j] = barBackSize[j]
+
+      barHPSize[2] = round(barBackSize[2] * barHPControl)
+
+      pg.draw.rect(screen, barFrameColor, barFrameSize)
+      pg.draw.rect(screen, barBackColor, barBackSize)
+      pg.draw.rect(screen, barHPColor, barHPSize)
+
   # 敵の追加
+
   def enemyAdd():
     if len(enemyPos) < enemyMax and frame % enemyROA == 0:
       safetyViolation = True
@@ -206,7 +231,6 @@ def Main():
         enemyRect[i][j] = enemyPos[i][j]
 
   # ダメージ判定
-
   def DamageCtrl(damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect):
     for i in range(len(enemyRect)):
       if playerCharaRect.colliderect(enemyRect[i]) and damageHit == False:
@@ -222,15 +246,18 @@ def Main():
   # 撃破判定
   def KillCtrl(bulletRect, enemyRect, killPoint):
     Hit = False
+    HitCtrl = True
     Kill = False
     enemyKill = 0
     bulletKill = 0
     for i in range(len(enemyRect)):
       for j in range(len(bulletRect)):
-        if bulletRect[j].colliderect(enemyRect[i]):
+        if bulletRect[j].colliderect(enemyRect[i]) and HitCtrl == True:
+          HitCtrl = False
           enemyHP[i] -= bulletDamage
           Hit = True
           if (enemyHP[i]) <= 0:
+            enemyHP[i] = 0
             Kill = True
             enemyKill = i
             bulletKill = j
@@ -353,7 +380,7 @@ def Main():
     # 弾の移動
     BulletMove()
 
-    # HPバーの描画
+    # PC_HPバーの描画
     HPBarUpdate()
 
     # 敵の移動
@@ -367,6 +394,9 @@ def Main():
     for i in range(len(enemyPos)):
       # pg.draw.rect(screen, (0, 0, 0), enemyRect[i])  # !当たり判定テスト用
       screen.blit(blueSlime_img[af], enemyPos[i])
+
+    # 敵_HPバーの描画
+    EnemyHPBarUpdate()
 
     # フレームカウンタの描画
     frame += 1
