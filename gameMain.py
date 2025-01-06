@@ -33,15 +33,12 @@ def Main():
   bulletMOA = 100  # MOA(Minutes of Angle)とは集弾率のこと 今回は高いほど集団率が悪い
   bulletROF = 4  # 何フレームごとに発射するか(Rate of Fire)
   bulletRect = []
-  bulletDamage = 50
 
   # 敵関連
   damageHit = False
   enemyPos = []
   enemyRect = []
-  orgBlueslimeHP = 100
-  enemyHP = []
-  enemyMax = 5
+  enemyMax = 100
   enemyROA = 10
   blueSlimeSpeed = 5
   invincibleCtrl = 0
@@ -108,7 +105,7 @@ def Main():
     blueSlime_img.append(tmp)
 
   # * 以下メイン処理
-  # 弾の追加
+  # ? 弾の追加
   def BulletAdd():
 
     bulletDirTemp = pg.mouse.get_pos()  # Dir = direction(方向)
@@ -190,9 +187,8 @@ def Main():
 
       enemyRect.append(rectTemp)
       enemyPos.append(posTemp)
-      enemyHP.append(orgBlueslimeHP)
 
-  # 敵の移動
+  # TODO 敵の移動
   def EnemyMove():
     enemySpeed = []
     for i in range(len(enemyPos)):
@@ -222,29 +218,22 @@ def Main():
   # 撃破判定
   def KillCtrl(bulletRect, enemyRect, killPoint):
     Hit = False
-    Kill = False
     enemyKill = 0
     bulletKill = 0
-    print(enemyHP)
     for i in range(len(enemyRect)):
       for j in range(len(bulletRect)):
         if bulletRect[j].colliderect(enemyRect[i]):
-          enemyHP[i] -= bulletDamage
           Hit = True
-          if (enemyHP[i]) <= 0:
-            Kill = True
-            enemyKill = i
-            bulletKill = j
+          enemyKill = i
+          bulletKill = j
 
     if Hit == True:
+      enemyPos.pop(enemyKill)
+      enemyRect.pop(enemyKill)
       bulletPos.pop(bulletKill)
       bulletSpeed.pop(bulletKill)
       bulletTime.pop(bulletKill)
       bulletRect.pop(bulletKill)
-    if Kill == True:
-      enemyPos.pop(enemyKill)
-      enemyRect.pop(enemyKill)
-      enemyHP.pop(enemyKill)
       killPoint += 1
 
     return (bulletRect, enemyRect, killPoint)
