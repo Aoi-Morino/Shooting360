@@ -21,12 +21,12 @@ def Main():
   exit_flag = False
   exit_code = '000'
 
-  gameState = "GAMEOVER"
+  gameState = "TITLE"
+  mouseClick = False
 
   # 弾関連
   bulletMAX = 100
   bulletPos = []
-  bulletAddCtrl = False
   bulletDecay = 0.92  # 弾の減衰率(1以上は加速)
   bulletOrgSpeed = chip_s * 3 / 4
   bulletSpeed = []
@@ -203,7 +203,7 @@ def Main():
   # 敵の追加
 
   def enemyAdd():
-    if len(enemyPos) < enemyMax and frame % enemyROA == 0:
+    if len(enemyPos) < enemyMax and frame % enemyROA == 0 and frame >= 100:
       safetyViolation = True
       while safetyViolation == True:
         posTemp = [r.randint(0, int(mapRan[0])),
@@ -233,7 +233,7 @@ def Main():
         enemyRect[i][j] = enemyPos[i][j]
 
   # ダメージ判定
-  def DamageCtrl(damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect):
+  def DamageCtrl(damageHit, playerHP, invincibleCtrl, gameState, playerCharaRect, enemyRect):
     for i in range(len(enemyRect)):
       if playerCharaRect.colliderect(enemyRect[i]) and damageHit == False:
         damageHit = True
@@ -241,9 +241,10 @@ def Main():
         playerHP -= 10
         if playerHP <= 0:
           playerHP = 0
+          gameState = "GAMEOVER"
     if frame == invincibleCtrl:
       damageHit = False
-    return (damageHit, playerHP, invincibleCtrl)
+    return (damageHit, playerHP, invincibleCtrl, gameState)
 
   # 撃破判定
   def KillCtrl(bulletRect, enemyRect, killPoint):
@@ -280,7 +281,66 @@ def Main():
     # * ゲームループ
   while not exit_flag:
 
+    # Title画面の描写
+    if gameState == "TITLE":
+
+      # システムイベントの検出
+      for event in pg.event.get():
+        if event.type == pg.QUIT:  # ウィンドウ[X]の押下
+          exit_flag = True
+          exit_code = '001'
+
+        # マウスクリック/クリック離しの受け取り処理
+        if event.type == pg.MOUSEBUTTONDOWN:
+          mouseClick = True
+        elif event.type == pg.MOUSEBUTTONUP:
+          mouseClick = False
+      mousePos = pg.mouse.get_pos()
+      mouseRect = pg.Rect(mousePos[0], mousePos[1], 1, 1)
+
+      # 背景描画
+      screen.fill(pg.Color(0, 0, 80))
+
+      # Start画面フォントの設定
+      titleScreen_font = pg.font.SysFont("Norwester", 80)
+
+      # Title文字の準備
+      title = titleScreen_font.render("Shooting 360", False, (255, 165, 0))
+      titleRect = title.get_rect(center=(mapRan[0] // 2, mapRan[1] // 4))
+
+      # start/finish文字の準備
+      start = titleScreen_font.render("Start", False, (0, 255, 0))
+      finish = titleScreen_font.render("Finish", False, (255, 0, 0))
+      startRect = start.get_rect(
+          center=(mapRan[0] // 2, mapRan[1] // 8 * 5))
+      finishRect = finish.get_rect(center=(mapRan[0] // 2, mapRan[1] // 4 * 3))
+
+      # マウス関連
+      mousePos = pg.mouse.get_pos()
+      mouseRect = pg.Rect(mousePos[0], mousePos[1], 1, 1)
+
+      if mouseRect.colliderect(startRect):
+        start = titleScreen_font.render(
+            "Start", False, (0, 255, 0), (150, 150, 150))
+        if mouseClick == True:
+          gameState = "PLAY"
+          mouseClick = False
+
+      if mouseRect.colliderect(finishRect):
+        finish = titleScreen_font.render(
+            "Finish", False, (255, 0, 0), (150, 150, 150))
+        if mouseClick == True:
+          exit_flag = True
+          exit_code = '002'
+
+      # 文字の表示
+      screen.blit(title, titleRect)
+      screen.blit(start, startRect)
+      screen.blit(finish, finishRect)
+
+    # Play画面の描写
     if gameState == "PLAY":
+
       # システムイベントの検出
       for event in pg.event.get():
         if event.type == pg.QUIT:  # ウィンドウ[X]の押下
@@ -318,13 +378,13 @@ def Main():
             damageHit = True
             invincibleCtrl = frame + 30
           if event.key == pg.K_KP_5:
-            bulletAddCtrl = True
+            mouseClick = True
 
         # マウスクリック/クリック離しの受け取り処理
         if event.type == pg.MOUSEBUTTONDOWN:
-          bulletAddCtrl = True
+          mouseClick = True
         elif event.type == pg.MOUSEBUTTONUP:
-          bulletAddCtrl = False
+          mouseClick = False
 
       # 背景描画
       screen.fill(pg.Color('WHITE'))
@@ -348,7 +408,7 @@ def Main():
             reimu_p += m_vec[i]  # 画面外に移動しないなら実際のキャラを移動
 
       # 弾の生成
-      if bulletAddCtrl == True:
+      if mouseClick == True:
         BulletAdd()
 
       # 自キャラの描画 dp:描画基準点（imgの左上座標）
@@ -368,8 +428,8 @@ def Main():
         reimu_d -= 4
 
       # ダメージ判定
-      damageHit, playerHP, invincibleCtrl = DamageCtrl(
-          damageHit, playerHP, invincibleCtrl, playerCharaRect, enemyRect)
+      damageHit, playerHP, invincibleCtrl, gameState = DamageCtrl(
+          damageHit, playerHP, invincibleCtrl, gameState, playerCharaRect, enemyRect)
 
       # 討伐判定
       bulletRect, enemyRect, killPoint = KillCtrl(
@@ -408,17 +468,91 @@ def Main():
       screen.blit(font.render(f'{reimu_p}', True, 'BLACK'), (10, 20))
       screen.blit(font.render(f"Kill:{killPoint}", True, "BLACK"), (10, 30))
 
+    # GameOver画面の描写
     if gameState == "GAMEOVER":
 
+      # システムイベントの検出
       for event in pg.event.get():
         if event.type == pg.QUIT:  # ウィンドウ[X]の押下
           exit_flag = True
           exit_code = '001'
 
-      gameover_font = pg.font.SysFont("Norwester", 80)
-      gameover = gameover_font.render("You Died!", False, (255, 0, 0))
-      gameoverRect = gameover.get_rect(center=(mapRan[0] // 2, mapRan[1] // 2))
+        # マウスクリック/クリック離しの受け取り処理
+        if event.type == pg.MOUSEBUTTONDOWN:
+          mouseClick = True
+        elif event.type == pg.MOUSEBUTTONUP:
+          mouseClick = False
+      mousePos = pg.mouse.get_pos()
+      mouseRect = pg.Rect(mousePos[0], mousePos[1], 1, 1)
+
+      # 背景描画
+      screen.fill(pg.Color('Black'))
+
+      # Gameover画面フォントの設定
+      gameoverScreen_font = pg.font.SysFont("Norwester", 80)
+
+      # GameOver文字の準備
+      gameover = gameoverScreen_font.render("You Died!", False, (255, 0, 0))
+      gameoverRect = gameover.get_rect(center=(mapRan[0] // 2, mapRan[1] // 4))
+
+      # Result文字の準備
+      result = gameoverScreen_font.render(
+          f"Result : {killPoint} PT", False, (255, 255, 255))
+      resultRect = result.get_rect(center=(mapRan[0] // 2, mapRan[1] // 16 * 7))
+
+      # Restart/Finish文字の準備
+      restart = gameoverScreen_font.render("ReStart", False, (0, 255, 0))
+      finish = gameoverScreen_font.render("Finish", False, (255, 0, 0))
+      restartRect = restart.get_rect(
+          center=(mapRan[0] // 2, mapRan[1] // 8 * 5))
+      finishRect = finish.get_rect(center=(mapRan[0] // 2, mapRan[1] // 4 * 3))
+
+      # フレームカウンタの描画
+      frm_str = f'{frame:05}'
+      screen.blit(font.render(frm_str, True, 'White'), (10, 10))
+
+      # マウス関連
+      mousePos = pg.mouse.get_pos()
+      mouseRect = pg.Rect(mousePos[0], mousePos[1], 1, 1)
+
+      if mouseRect.colliderect(restartRect):
+        restart = gameoverScreen_font.render(
+            "ReStart", False, (0, 255, 0), (150, 150, 150))
+        if mouseClick == True:
+          gameState = "PLAY"
+
+          # 色々リセット
+          bulletPos = []
+          frame = 0
+          bulletSpeed = []
+          bulletTime = []
+          bulletRect = []
+          enemyPos = []
+          enemyRect = []
+          enemyHP = []
+          invincibleCtrl = 0
+          killPoint = 0
+          playerHP = orgPlayerHP
+          reimu_p = pg.Vector2(map_s[0] / 2, map_s[1] / 2)
+          cmdMove[0] = False
+          cmdMove[1] = False
+          cmdMove[2] = False
+          cmdMove[3] = False
+          mouseClick = False
+          damageHit = False
+
+      if mouseRect.colliderect(finishRect):
+        finish = gameoverScreen_font.render(
+            "Finish", False, (255, 0, 0), (150, 150, 150))
+        if mouseClick == True:
+          exit_flag = True
+          exit_code = '002'
+
+      # 文字の表示
       screen.blit(gameover, gameoverRect)
+      screen.blit(result, resultRect)
+      screen.blit(restart, restartRect)
+      screen.blit(finish, finishRect)
 
     # 画面の更新と同期
     pg.display.update()
