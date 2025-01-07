@@ -109,7 +109,7 @@ def Main():
     tmp = pg.transform.scale(tmp, blueSlime_s)
     blueSlime_img.append(tmp)
 
-  # * 以下メイン処理
+  # * メイン処理
   # 弾の追加
   def BulletAdd():
 
@@ -281,7 +281,7 @@ def Main():
     # * ゲームループ
   while not exit_flag:
 
-    # Title画面の描写
+    # * Title画面の描写
     if gameState == "TITLE":
 
       # システムイベントの検出
@@ -338,7 +338,7 @@ def Main():
       screen.blit(start, startRect)
       screen.blit(finish, finishRect)
 
-    # Play画面の描写
+    # * Play画面の描写
     if gameState == "PLAY":
 
       # システムイベントの検出
@@ -468,7 +468,7 @@ def Main():
       screen.blit(font.render(f'{reimu_p}', True, 'BLACK'), (10, 20))
       screen.blit(font.render(f"Kill:{killPoint}", True, "BLACK"), (10, 30))
 
-    # GameOver画面の描写
+    # * GameOver画面の描写
     if gameState == "GAMEOVER":
 
       # システムイベントの検出
