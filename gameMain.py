@@ -43,11 +43,12 @@ def Main():
   enemyRect = []
   orgBlueslimeHP = 100
   enemyHP = []
-  enemyMax = 5
+  enemyMax = 100
   enemyROA = 10
   blueSlimeSpeed = 5
   invincibleCtrl = 0
   killPoint = 0
+  enemyAddStart = 100
 
   # HP関連
   orgPlayerHP = 100
@@ -203,7 +204,7 @@ def Main():
   # 敵の追加
 
   def enemyAdd():
-    if len(enemyPos) < enemyMax and frame % enemyROA == 0 and frame >= 100:
+    if len(enemyPos) < enemyMax and frame % enemyROA == 0 and frame >= enemyAddStart:
       safetyViolation = True
       while safetyViolation == True:
         posTemp = [r.randint(0, int(mapRan[0])),

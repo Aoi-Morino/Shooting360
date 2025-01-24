@@ -1,0 +1,7 @@
+git rm --cached .vscode/
+git rm --cached .venv/
+git rm --cached /Data/Sub/
+
+.vscode/
+.venv/
+/Data/Sub/
